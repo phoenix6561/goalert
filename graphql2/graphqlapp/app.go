@@ -12,7 +12,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/target/goalert/alert"
 	alertlog "github.com/target/goalert/alert/log"
+<<<<<<< HEAD
 	"github.com/target/goalert/auth"
+=======
+	"github.com/target/goalert/auth/authlink"
+>>>>>>> af2b885defcc793204630b2deaa5a8d46544809f
 	"github.com/target/goalert/calendarsubscription"
 	"github.com/target/goalert/config"
 	"github.com/target/goalert/escalation"
@@ -67,6 +71,7 @@ type App struct {
 	LimitStore     *limit.Store
 	SlackStore     *slack.ChannelSender
 	HeartbeatStore heartbeat.Store
+	AuthLinkStore  *authlink.Store
 
 	AuthHandler *auth.Handler
 
