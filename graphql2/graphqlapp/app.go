@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/target/goalert/alert"
 	alertlog "github.com/target/goalert/alert/log"
-	"github.com/target/goalert/auth"
 	"github.com/target/goalert/auth/authlink"
 	"github.com/target/goalert/calendarsubscription"
 	"github.com/target/goalert/config"
