@@ -42,10 +42,6 @@ const useStyles = makeStyles((theme) => ({
   appBar: {
     zIndex: theme.zIndex.drawer + 1,
   },
-  icon: {
-    marginRight: '0.25em',
-    color: theme.palette.primary['500'],
-  },
   toolbar: theme.mixins.toolbar,
   containerClass: {
     padding: '1em',
@@ -54,7 +50,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }))
 
-export default function App() {
+export default function App(): JSX.Element {
   const classes = useStyles()
   const [showMobile, setShowMobile] = useState(false)
   const width = useWidth()
@@ -99,7 +95,7 @@ export default function App() {
           <Hidden mdUp>
             <LazyMobileSideBar
               show={showMobile}
-              onChange={(val) => setShowMobile(val)}
+              onChange={(val: boolean) => setShowMobile(val)}
             >
               <LazySideBarDrawerList onWizard={() => setShowMobile(true)} />
             </LazyMobileSideBar>
