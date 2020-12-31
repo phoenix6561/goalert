@@ -1,14 +1,21 @@
-import React, { Component } from 'react'
+import React, { useState } from 'react'
 import { PropTypes as p } from 'prop-types'
 import Button from '@material-ui/core/Button'
 import Grid from '@material-ui/core/Grid'
 import Tooltip from '@material-ui/core/Tooltip'
-import withStyles from '@material-ui/core/styles/withStyles'
-import { connect } from 'react-redux'
-import { urlParamSelector } from '../selectors'
-import { DateTime, Duration } from 'luxon'
+import { makeStyles } from '@material-ui/core'
+import { DateTime } from 'luxon'
 
-const styles = (theme) => ({
+const useStyles = makeStyles((theme) => ({
+  button: {
+    padding: '4px',
+    minHeight: 0,
+    fontSize: 12,
+  },
+  buttonContainer: {
+    display: 'flex',
+    alignItems: 'center',
+  },
   flexGrow: {
     flexGrow: 1,
   },
@@ -26,56 +33,15 @@ const styles = (theme) => ({
   popper: {
     opacity: 1,
   },
-})
+}))
 
-const mapStateToProps = (state) => {
-  // false: monthly, true: weekly
-  const weekly = urlParamSelector(state)('weekly', false)
-  let start = urlParamSelector(state)(
-    'start',
-    DateTime.local().startOf('day').toISO(),
-  )
+export default function CalendarEventWrapper(props) {
+  const classes = useStyles()
+  const { children, event, onOverrideClick } = props
+  const [open, setOpen] = useState(false)
 
-  const activeOnly = urlParamSelector(state)('activeOnly', false)
-  if (activeOnly) {
-    start = DateTime.local().toISO()
-  }
-
-  const end = DateTime.fromISO(start)
-    .plus(Duration.fromISO(weekly ? 'P7D' : 'P1M'))
-    .toISO()
-
-  return {
-    start,
-    end,
-    userFilter: urlParamSelector(state)('userFilter', []),
-    activeOnly,
-  }
-}
-
-@withStyles(styles)
-@connect(mapStateToProps, null)
-export default class CalendarEventWrapper extends Component {
-  static propTypes = {
-    event: p.object.isRequired,
-    onOverrideClick: p.func,
-    onEditTempSched: p.func,
-    onDeleteTempSched: p.func,
-  }
-
-  // Handle showing tooltips with tab focus
-  // but also toggling via clicks event
-  // state is tracked separately as an additional
-  // click on the shift span will close the tooltip
-  state = {
-    eventClicked: false,
-    eventHasFocus: false,
-  }
-
-  handleShowOverrideForm = (type) => {
-    const { event, onOverrideClick } = this.props
-
-    this.handleBlurTooltip()
+  function handleShowOverrideForm(type) {
+    setOpen(false)
 
     onOverrideClick({
       variant: type,
@@ -87,103 +53,6 @@ export default class CalendarEventWrapper extends Component {
     })
   }
 
-  handleClickTooltip = () => {
-    if (!this.state.eventClicked) {
-      this.setState({ eventClicked: true, eventHasFocus: true })
-    } else {
-      this.setState({ eventClicked: false, eventHasFocus: false })
-    }
-  }
-
-  handleFocusTooltip = () => {
-    this.setState({ eventHasFocus: true, eventClicked: false })
-  }
-
-  handleBlurTooltip = () => {
-    this.setState({ eventHasFocus: false, eventClicked: false })
-  }
-
-  renderTempSchedButtons() {
-    const { classes, event } = this.props
-    return (
-      <React.Fragment>
-        <Grid item>
-          <Button
-            data-cy='edit-temp-sched'
-            size='small'
-            onClick={() => {
-              this.handleBlurTooltip()
-              return this.props.onEditTempSched(event.tempSched)
-            }}
-            variant='contained'
-            color='primary'
-            title='Edit this temporary schedule'
-          >
-            Edit
-          </Button>
-        </Grid>
-        <Grid item className={classes.flexGrow} />
-        <Grid item>
-          <Button
-            data-cy='delete-temp-sched'
-            size='small'
-            onClick={() => {
-              this.handleBlurTooltip()
-              return this.props.onDeleteTempSched(event.tempSched)
-            }}
-            variant='contained'
-            color='primary'
-            title='Delete this temporary schedule'
-          >
-            Delete
-          </Button>
-        </Grid>
-      </React.Fragment>
-    )
-  }
-
-  renderOverrideButtons() {
-    const { classes, event } = this.props
-    return (
-      <React.Fragment>
-        <Grid item>
-          <Button
-            data-cy='replace-override'
-            size='small'
-            onClick={() => this.handleShowOverrideForm('replace')}
-            variant='contained'
-            color='primary'
-            title={`Temporarily replace ${event.title} from this schedule`}
-          >
-            Replace
-          </Button>
-        </Grid>
-        <Grid item className={classes.flexGrow} />
-        <Grid item>
-          <Button
-            data-cy='remove-override'
-            size='small'
-            onClick={() => this.handleShowOverrideForm('remove')}
-            variant='contained'
-            color='primary'
-            title={`Temporarily remove ${event.title} from this schedule`}
-          >
-            Remove
-          </Button>
-        </Grid>
-      </React.Fragment>
-    )
-  }
-
-  renderButtons() {
-    const { event } = this.props
-    if (DateTime.fromJSDate(event.end) <= DateTime.utc()) return null
-    if (event.tempSched) return this.renderTempSchedButtons()
-    if (event.fixed) return null
-
-    return this.renderOverrideButtons()
-  }
-
   /*
    * Renders an interactive tooltip when hovering
    * over an event in the calendar that will show
@@ -192,8 +61,44 @@ export default class CalendarEventWrapper extends Component {
    * shift as an override, if possible (not in the
    * past).
    */
-  renderInteractiveTooltip = () => {
-    const { event } = this.props
+  function renderInteractiveTooltip() {
+    let overrideCtrls = null
+
+    if (DateTime.fromJSDate(event.end) > DateTime.utc()) {
+      overrideCtrls = (
+        <React.Fragment>
+          <Grid item className={classes.buttonContainer}>
+            <Button
+              className={classes.button}
+              data-cy='replace-override'
+              size='small'
+              onClick={() => handleShowOverrideForm('replace')}
+              variant='contained'
+              color='primary'
+              title={`Temporarily replace ${event.title} from this schedule`}
+            >
+              Replace
+            </Button>
+          </Grid>
+          <Grid item className={classes.flexGrow} />
+
+          <Grid item className={classes.buttonContainer}>
+            <Button
+              className={classes.button}
+              data-cy='remove-override'
+              size='small'
+              onClick={() => handleShowOverrideForm('remove')}
+              variant='contained'
+              color='primary'
+              title={`Temporarily remove ${event.title} from this schedule`}
+            >
+              Remove
+            </Button>
+          </Grid>
+        </React.Fragment>
+      )
+    }
+
     const formatJSDate = (JSDate) =>
       DateTime.fromJSDate(JSDate).toLocaleString(DateTime.DATETIME_FULL)
 
@@ -202,36 +107,48 @@ export default class CalendarEventWrapper extends Component {
         <Grid item xs={12}>
           {`${formatJSDate(event.start)}  –  ${formatJSDate(event.end)}`}
         </Grid>
-        {this.renderButtons()}
+        {overrideCtrls}
       </Grid>
     )
   }
 
-  render() {
-    const { children, classes } = this.props
-    const { eventClicked, eventHasFocus } = this.state
-
-    return (
-      <Tooltip
-        open={eventHasFocus || eventClicked}
-        classes={{
-          tooltip: classes.tooltip,
-          popper: classes.popper,
-        }}
-        interactive
-        placement='bottom-start'
-        PopperProps={{
-          'data-cy': 'shift-tooltip',
-        }}
-        title={this.renderInteractiveTooltip()}
-      >
-        {React.cloneElement(children, {
-          onMouseUp: this.handleClickTooltip,
-          onFocus: this.handleFocusTooltip,
-          onBlur: this.handleBlurTooltip,
-          role: 'button',
-        })}
-      </Tooltip>
-    )
+  function handleKeyDown(event) {
+    const code = event.keyCode || event.which
+    if (code === 13 || code === 32) {
+      event.preventDefault()
+      setOpen(true)
+    }
   }
+
+  // calendar event selection is not set when focused by key press
+  // event focus and click events handled manually
+  return (
+    <Tooltip
+      open={open}
+      classes={{
+        tooltip: classes.tooltip,
+        popper: classes.popper,
+      }}
+      interactive
+      placement='bottom-start'
+      PopperProps={{
+        'data-cy': 'shift-tooltip',
+      }}
+      title={renderInteractiveTooltip()}
+    >
+      {React.cloneElement(children, {
+        onClick: () => setOpen(true),
+        onKeyDown: handleKeyDown, // handles opening by screen reader/keyboard
+        onBlur: () => setOpen(false),
+        role: 'button',
+        'aria-pressed': open,
+        className: open ? 'rbc-selected rbc-event' : 'rbc-event',
+      })}
+    </Tooltip>
+  )
+}
+
+CalendarEventWrapper.propTypes = {
+  event: p.object.isRequired,
+  onOverrideClick: p.func.isRequired,
 }
