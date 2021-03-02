@@ -3,19 +3,11 @@ import p from 'prop-types'
 import Button from '@material-ui/core/Button'
 import CircularProgress from '@material-ui/core/CircularProgress'
 
-export default class LoadingButton extends Component {
-  static propTypes = {
-    attemptCount: p.number,
-    buttonText: p.string,
-    color: p.string,
-    disabled: p.bool,
-    loading: p.bool,
-    noSubmit: p.bool,
-    onClick: p.func,
-  }
 
-  render() {
-    const {
+
+export default function LoadingButton(props) {
+
+  const {
       attemptCount,
       buttonText,
       color,
@@ -25,7 +17,7 @@ export default class LoadingButton extends Component {
       onClick,
       style,
       ...rest
-    } = this.props
+    } = props
 
     return (
       <div style={{ position: 'relative', ...style }}>
@@ -55,5 +47,14 @@ export default class LoadingButton extends Component {
         )}
       </div>
     )
-  }
+  
+}
+LoadingButton.propTypes = {
+  attemptCount: p.number,
+  buttonText: p.string,
+  color: p.string,
+  disabled: p.bool,
+  loading: p.bool,
+  noSubmit: p.bool,
+  onClick: p.func,
 }
